@@ -79,6 +79,7 @@ public interface UserInfoRequest
 
     class AuthorizationResponse implements UserInfoRequest
     {
+
         private final AuthorizationSuccessResponse authorizationResponse;
         private final Map<String, Object> additionalParameters;
 

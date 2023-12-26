@@ -1,8 +1,8 @@
 package io.github.xc404.oauth.auth;
 
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import io.github.xc404.oauth.core.AuthorizationResult;
+import io.github.xc404.oauth.core.ClientUserInfo;
 import io.github.xc404.oauth.core.LoginToken;
 import io.github.xc404.oauth.core.OAuthService;
 import io.github.xc404.oauth.utils.UrlUtils;
@@ -41,7 +41,7 @@ public class AuthCtl
         LoginToken loginToken = authorizationResult.getLoginToken();
         if( loginToken != null ) {
             if( this.loginWhenAuthorization ) {
-                UserInfo userInfo = this.oAuthService.loginWithLoginToken(loginToken);
+                ClientUserInfo userInfo = this.oAuthService.loginWithLoginToken(loginToken);
                 SessionToken sessionToken = login(userInfo);
                 Map<String, String> params = Collections.singletonMap("session_token", sessionToken.getValue());
                 uri = UrlUtils.toURI(UrlUtils.appendQuery(uri.toString(), params));
@@ -54,12 +54,12 @@ public class AuthCtl
     }
 
     public SessionToken login(String provider, AuthorizationGrant authorizationGrant) {
-        UserInfo authenticate = oAuthService.authenticate(provider, authorizationGrant);
-        return login(authenticate);
+        ClientUserInfo userInfo = oAuthService.authenticate(provider, authorizationGrant);
+        return login(userInfo);
     }
 
 
-    protected SessionToken login(UserInfo userInfo) {
+    protected SessionToken login(ClientUserInfo userInfo) {
         IUser user = this.userService.getOrCreateUser(userInfo);
         return this.loginService.login(user);
     }

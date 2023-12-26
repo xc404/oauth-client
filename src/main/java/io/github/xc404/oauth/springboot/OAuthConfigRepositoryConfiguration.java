@@ -17,7 +17,7 @@ import java.util.List;
 )
 @EnableConfigurationProperties({OAuthClientProperties.class})
 @Conditional({OAuthClientsConfiguredCondition.class})
-class OAuthConfigRepositoryConfiguration
+public class OAuthConfigRepositoryConfiguration
 {
     OAuthConfigRepositoryConfiguration() {
     }

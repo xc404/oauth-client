@@ -31,7 +31,7 @@ public class OAuthClientsConfiguredCondition extends SpringBootCondition
     }
 
     private Map<String, OAuthClientProperties.OAuthClientProperty> getRegistrations(Environment environment) {
-        return Binder.get(environment).bind("x404.oauth.clients", STRING_REGISTRATION_MAP)
+        return Binder.get(environment).bind("xc404.oauth.clients", STRING_REGISTRATION_MAP)
                 .orElse(Collections.emptyMap());
     }
 

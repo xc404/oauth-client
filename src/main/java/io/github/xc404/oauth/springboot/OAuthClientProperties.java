@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 @ConfigurationProperties(
-        prefix = "x404.oauth"
+        prefix = "xc404.oauth"
 )
 public class OAuthClientProperties implements InitializingBean
 {

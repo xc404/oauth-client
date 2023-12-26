@@ -41,7 +41,6 @@ public interface OAuthProviderConfig
     }
 
 
-
     /**
      * Name of OAuth provider
      */

@@ -1,6 +1,6 @@
 package io.github.xc404.oauth.auth;
 
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import io.github.xc404.oauth.core.ClientUserInfo;
 
 /**
  * @Author chaox
@@ -8,5 +8,5 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
  */
 public interface UserService
 {
-    IUser getOrCreateUser(UserInfo userInfo);
+    IUser getOrCreateUser(ClientUserInfo userInfo);
 }

@@ -34,6 +34,22 @@ public enum CommonOAuthProvider implements OAuthProviderConfig
         public String getIssuerUri() {
             return "https://accounts.google.com";
         }
+    },
+    GITHUB {
+        @Override
+        public String getAuthorizationUri() {
+            return "https://github.com/login/oauth/authorize";
+        }
+
+        @Override
+        public String getTokenUri() {
+            return "https://github.com/login/oauth/access_token";
+        }
+
+        @Override
+        public String getUserInfoUri() {
+            return "https://api.github.com/user";
+        }
     };
 
     @Override

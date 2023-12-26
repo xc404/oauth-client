@@ -11,8 +11,8 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ParseException;
-import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
@@ -84,7 +84,7 @@ public class DefaultOAuthClient implements OAuthClient
         this.tokenURI = toURI(authConfig.getTokenUri());
         this.userInfoURI = toURI(authConfig.getUserInfoUri());
         this.scope = Scope.parse(authConfig.getScopes());
-        this.requiredOIDC = scope.contains(OIDCScopeValue.OPENID);
+        this.requiredOIDC = scope != null && scope.contains(OIDCScopeValue.OPENID);
         this.issuerURI = StringUtils.isNotBlank(authConfig.getIssuerUri()) ? toURI(authConfig.getIssuerUri()) : null;
         this.jwkSetURI = StringUtils.isNotBlank(authConfig.getJwkSetUri()) ? toURI(authConfig.getJwkSetUri()) : null;
         this.supportOIDC = (this.issuerURI != null && this.jwkSetURI != null);
@@ -92,11 +92,14 @@ public class DefaultOAuthClient implements OAuthClient
             this.issuer = new Issuer(issuerURI);
             try {
                 JWKSource<SecurityContext> jwkSource = JWKSourceBuilder.create(jwkSetURI.toURL())
-                        .cache(authConfig.getJwkSetRefreshInterval(),DEFAULT_CACHE_REFRESH_TIMEOUT)
+                        .cache(authConfig.getJwkSetRefreshInterval(), DEFAULT_CACHE_REFRESH_TIMEOUT)
                         .refreshAheadCache(DEFAULT_REFRESH_AHEAD_TIME, true).build();
                 this.idTokenValidator = new IDTokenValidator(issuer, clientID, new JWSVerificationKeySelector<>(JWSAlgorithm.HS256, jwkSource), null);
             } catch( MalformedURLException e ) {
                 throw new IllegalArgumentException(e);
+            }
+            if( this.scope == null ) {
+                this.scope = new Scope(OIDCScopeValue.OPENID);
             }
         }
     }
@@ -120,16 +123,26 @@ public class DefaultOAuthClient implements OAuthClient
         // Generate random state string for pairing the response to the request
         CodeVerifier codeVerifier = authConfig.isEnablePkce() ? oAuthContext.getCodeVerifier() : null;
         Nonce nonce = requiredOIDC ? oAuthContext.getNonce() : null;
+        AuthorizationRequest request;
 
         // Build the request
-        AuthenticationRequest request = new AuthenticationRequest.Builder(
-                new ResponseType(ResponseType.Value.CODE), scope, clientID, redirectUri)
-                .scope(scope)
-                .state(state)
-                .codeChallenge(codeVerifier, authConfig.getCodeChallengeMethod())
-                .endpointURI(authorizationURI)
-                .nonce(nonce)
-                .build();
+        if( requiredOIDC ) {
+            request = new AuthenticationRequest.Builder(
+                    this.authConfig.getResponseType(), scope, clientID, redirectUri)
+                    .scope(scope)
+                    .state(state)
+                    .codeChallenge(codeVerifier, authConfig.getCodeChallengeMethod())
+                    .endpointURI(authorizationURI)
+                    .nonce(nonce)
+                    .build();
+        } else {
+            request = new AuthorizationRequest.Builder(this.authConfig.getResponseType(), clientID)
+                    .scope(scope)
+                    .state(state)
+                    .codeChallenge(codeVerifier, authConfig.getCodeChallengeMethod())
+                    .endpointURI(authorizationURI)
+                    .build();
+        }
 
         // Use this URI to send the end-user's browser to the server
         return request.toURI();
@@ -195,7 +208,7 @@ public class DefaultOAuthClient implements OAuthClient
 
 
     @Override
-    public UserInfo getUserInfo(AccessToken accessToken) {
+    public ClientUserInfo getUserInfo(AccessToken accessToken) {
         try {
             HTTPResponse httpResponse = new UserInfoRequest(this.userInfoURI, accessToken)
                     .toHTTPRequest()
@@ -210,7 +223,8 @@ public class DefaultOAuthClient implements OAuthClient
             }
 
             // Extract the claims
-            return userInfoResponse.toSuccessResponse().getUserInfo();
+            UserInfo userInfo = userInfoResponse.toSuccessResponse().getUserInfo();
+            return new ClientUserInfo(this.authConfig.getProvider(), userInfo);
 
         } catch( IOException | ParseException e ) {
             throw new OAuthException(e);
@@ -226,10 +240,10 @@ public class DefaultOAuthClient implements OAuthClient
         }
     }
 
-    public UserInfo getUserInfo(OAuthContext oAuthContext, IdToken idToken) {
+    public ClientUserInfo getUserInfo(OAuthContext oAuthContext, IdToken idToken) {
 
         validateIdToken(oAuthContext, idToken);
-        return new UserInfo(idToken.getJWTClaimsSet());
+        return new ClientUserInfo(getOAuthConfig().getProvider(), new UserInfo(idToken.getJWTClaimsSet()));
     }
 
     @Override

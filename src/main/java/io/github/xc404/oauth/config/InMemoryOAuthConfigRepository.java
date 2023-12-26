@@ -54,13 +54,13 @@ public class InMemoryOAuthConfigRepository implements OAuthConfigRepository
     private static Map<String, OAuthConfig> toUnmodifiableConcurrentMap(List<OAuthConfig> oAuthConfigs) {
         ConcurrentHashMap<String, OAuthConfig> result = new ConcurrentHashMap<>();
         for( OAuthConfig registration : oAuthConfigs ) {
-            result.put(registration.getProvider(), registration);
+            result.put(registration.getProvider().toLowerCase(), registration);
         }
         return Collections.unmodifiableMap(result);
     }
 
     @Override
     public OAuthConfig getOAuthConfig(String provider) {
-        return this.oAuthConfigs.get(provider);
+        return this.oAuthConfigs.get(provider.toLowerCase());
     }
 }

@@ -18,6 +18,7 @@ package io.github.xc404.oauth.config;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import io.github.xc404.oauth.provider.CommonOAuthProvider;
 
 import java.util.Set;
 
@@ -34,6 +35,11 @@ public class OAuthConfig
     private final OAuthClientConfig clientConfig;
 
     private final OAuthProviderConfig providerConfig;
+
+
+    public OAuthConfig(OAuthClientConfig clientConfig) {
+        this(clientConfig, CommonOAuthProvider.valueOf(clientConfig.getProvider().toUpperCase()));
+    }
 
     public OAuthConfig(OAuthClientConfig clientConfig, OAuthProviderConfig providerConfig) {
         this.clientConfig = clientConfig;

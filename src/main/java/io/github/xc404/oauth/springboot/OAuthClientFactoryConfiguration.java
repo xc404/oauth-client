@@ -6,11 +6,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration(
         proxyBeanMethods = false
 )
-class OAuthClientFactoryConfiguration
+@Import(OAuthConfigRepositoryConfiguration.class)
+public class OAuthClientFactoryConfiguration
 {
     OAuthClientFactoryConfiguration() {
     }
@@ -18,7 +20,7 @@ class OAuthClientFactoryConfiguration
     @Bean
     @ConditionalOnClass(OAuthConfigRepository.class)
     @ConditionalOnMissingBean({OAuthClientFactory.class})
-    OAuthClientFactory OAuthConfigRepository(OAuthConfigRepository authConfigRepository) {
+    OAuthClientFactory oauthClientFactory(OAuthConfigRepository authConfigRepository) {
 
         return new OAuthClientFactory(authConfigRepository);
     }

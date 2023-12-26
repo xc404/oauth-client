@@ -23,7 +23,7 @@ public class AutoloadProviderConfig implements OAuthProviderConfig
 
     @Override
     public String getAuthorizationUri() {
-        String uri = this.oAuthProviderConfig.getTokenUri();
+        String uri = this.oAuthProviderConfig.getAuthorizationUri();
         if( StringUtils.isBlank(uri) ) {
             ensureOIDCMetadataLoaded();
             uri = oidcMetadata.getAuthorizationEndpointURI().toString();
@@ -43,7 +43,7 @@ public class AutoloadProviderConfig implements OAuthProviderConfig
 
     @Override
     public String getUserInfoUri() {
-        String uri = this.oAuthProviderConfig.getTokenUri();
+        String uri = this.oAuthProviderConfig.getUserInfoUri();
         if( StringUtils.isBlank(uri) ) {
             ensureOIDCMetadataLoaded();
             uri = oidcMetadata.getUserInfoEndpointURI().toString();

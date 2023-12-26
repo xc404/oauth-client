@@ -3,6 +3,7 @@ package io.github.xc404.oauth.core;
 import io.github.xc404.oauth.config.OAuthConfig;
 import io.github.xc404.oauth.config.OAuthConfigRepository;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -12,14 +13,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OAuthClientFactory
 {
     private final OAuthConfigRepository oAuthConfigRepository;
-    private final ConcurrentHashMap<String, OAuthClient> clients = new ConcurrentHashMap<>();
+    private final Map<String, OAuthClient> clients = new ConcurrentHashMap<>();
 
     public OAuthClientFactory(OAuthConfigRepository oAuthConfigRepository) {
         this.oAuthConfigRepository = oAuthConfigRepository;
     }
 
     public OAuthClient getOAuthClient(String provider) {
-        return clients.computeIfAbsent(provider, key -> {
+        return clients.computeIfAbsent(provider.toLowerCase(), key -> {
             OAuthConfig oAuthConfig = getoAuthConfig(key);
             return new DefaultOAuthClient(oAuthConfig);
         });
@@ -27,7 +28,7 @@ public class OAuthClientFactory
     }
 
     protected OAuthConfig getoAuthConfig(String provider) {
-        return this.oAuthConfigRepository.getOAuthConfig(provider);
+        return this.oAuthConfigRepository.getOAuthConfig(provider.toLowerCase());
     }
 
 

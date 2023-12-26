@@ -62,8 +62,7 @@ public final class OAuthClientPropertiesConfigAdapter
 
 
     private static OAuthClientConfig buildClientConfig(String provider, OAuthClientProperties.OAuthClientProperty property) {
-        OAuthClientConfig.Builder builder = OAuthClientConfig.builder();
-        builder.withProvider(provider);
+        OAuthClientConfig.Builder builder = OAuthClientConfig.builder(provider);
         builder.withClientId(property.getClientId());
         builder.withClientSecret(property.getClientSecret());
         builder.withEnablePkce(property.isEnablePkce());

@@ -72,10 +72,11 @@ public final class ProviderConfigBuilder
         boolean hasAllOidcUri = StringUtils.isNotBlank(issuerUri) && StringUtils.isNotBlank(jwkSetUri);
         if( hasAllOidcUri || hasAllOAuth2Uri ) {
             SimpleOAuthProviderConfig providerConfig = new SimpleOAuthProviderConfig();
+
             providerConfig.setAuthorizationUri(authorizationUri);
             providerConfig.setTokenUri(tokenUri);
             providerConfig.setUserInfoUri(userInfoUri);
-            providerConfig.setProvider(provider);
+            providerConfig.setProvider(provider.toLowerCase());
             providerConfig.setIssuerUri(issuerUri);
             providerConfig.setJwkSetUri(jwkSetUri);
             return providerConfig;

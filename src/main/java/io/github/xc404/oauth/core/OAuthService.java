@@ -5,9 +5,9 @@ import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.ErrorObject;
-import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
 import com.nimbusds.openid.connect.sdk.AuthenticationResponse;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.nimbusds.oauth2.sdk.OAuth2Error.SERVER_ERROR_CODE;
 
@@ -40,6 +41,7 @@ public class OAuthService
     public static final String AUTHENTICATION_RESPONSE_CONTEXT_KEY = "authenticationResponse";
     private final OAuthClientFactory oAuthClientFactory;
     private final OAuthContextProvider oAuthContextProvider;
+    private boolean allowUnknownStateAuthorization = false;
 
     public OAuthService(OAuthClientFactory oAuthClientFactory) {
         this(oAuthClientFactory, DefaultOAuthContextProvider.getInstance());
@@ -50,21 +52,6 @@ public class OAuthService
         this.oAuthContextProvider = oAuthContextProvider;
     }
 
-    private static URI redirect(InnerAuthorizationRequest innerAuthorizationRequest,
-                                ErrorObject errorObject) {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("state", innerAuthorizationRequest.getState());
-        params.put("provider", innerAuthorizationRequest.getProvider());
-        if( errorObject != null ) {
-            params.put("error", errorObject.getCode());
-            params.put("error_description", errorObject.getDescription());
-        }
-        try {
-            return new URI(UrlUtils.appendQuery(innerAuthorizationRequest.getRedirectUrl(), params));
-        } catch( URISyntaxException e ) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public URI requestAuthorization(String provider, String redirectUrl, String state) {
         InnerAuthorizationRequest request = new InnerAuthorizationRequest(provider, redirectUrl, state);
@@ -85,18 +72,26 @@ public class OAuthService
     }
 
     public AuthorizationResult authorizationCallback(URI requestUrl) {
+        return this.authorizationCallback(requestUrl, null);
+    }
+
+    public AuthorizationResult authorizationCallback(URI requestUrl, String provider) {
 
         OAuthParser.AuthorizationResponse parse = OAuthParser.parseAuthorizationResponse(requestUrl);
         AuthenticationResponse response = parse.getAuthenticationResponse();
-        State state = response.getState();
-        if( state == null ) {
-            throw new OAuthException(OAuth2Error.INVALID_REQUEST);
-        }
-        OAuthContext oAuthContext = oAuthContextProvider.getOAuthContext(state);
+        OAuthContext oAuthContext = getOAuthContext(response);
+        InnerAuthorizationRequest request;
         if( oAuthContext == null ) {
-            throw new OAuthException(new ErrorObject(SERVER_ERROR_CODE, "session expired"));
+            if( allowUnknownStateAuthorization && StringUtils.isNotBlank(provider) ) {
+                OAuthClient oAuthClient = getOAuthClient(provider);
+                oAuthContext = oAuthContextProvider.createOAuthContext(Duration.ofMillis(oAuthClient.getOAuthConfig().getTimeout()));
+                request = new InnerAuthorizationRequest(provider, oAuthClient.getOAuthConfig().getRedirectUri(), Optional.ofNullable(response.getState()).map(m -> m.getValue()).orElse(null));
+            } else {
+                throw new OAuthException(new ErrorObject(SERVER_ERROR_CODE, "invalid state"));
+            }
+        } else {
+            request = getContext(oAuthContext, AUTHORIZATION_REQUEST_CONTEXT_KEY);
         }
-        InnerAuthorizationRequest request = getContext(oAuthContext, AUTHORIZATION_REQUEST_CONTEXT_KEY);
         try {
             if( !response.indicatesSuccess() ) {
                 ErrorObject errorObject = response.toErrorResponse().getErrorObject();
@@ -104,11 +99,9 @@ public class OAuthService
             }
 
             AuthenticationSuccessResponse successResponse = response.toSuccessResponse();
-
-
             InnerAuthenticationResponse authenticationResponse = new InnerAuthenticationResponse(request.provider, successResponse, parse.getAdditionalParameters());
             oAuthContext.setContext(AUTHENTICATION_RESPONSE_CONTEXT_KEY, authenticationResponse);
-            LoginToken loginToken = LoginToken.fromState(state);
+            LoginToken loginToken = LoginToken.fromState(oAuthContext.getState());
             //return with loginToken;
             return new AuthorizationResult(redirect(request, null), loginToken);
         } catch( Throwable e ) {
@@ -123,7 +116,8 @@ public class OAuthService
         }
     }
 
-    public UserInfo authenticate(String provider, AuthorizationGrant authorizationGrant) {
+
+    public ClientUserInfo authenticate(String provider, AuthorizationGrant authorizationGrant) {
         AuthorizationGrant grant = authorizationGrant;
         if( authorizationGrant instanceof AdditionalParamsAuthorizationGrant ) {
             grant = ((AdditionalParamsAuthorizationGrant) authorizationGrant).getProxy();
@@ -131,13 +125,13 @@ public class OAuthService
         if( grant instanceof LoginTokenGrant ) {
             return this.loginWithLoginToken(((LoginTokenGrant) grant).getLoginToken());
         }
-        OAuthClient oAuthClient = getOAuthClient(provider);
 
+        OAuthClient oAuthClient = getOAuthClient(provider);
         AccessTokenResponse accessTokenResponse = oAuthClient.authenticate(OAuthContext.empty(), authorizationGrant);
         return authenticate(provider, OAuthContext.empty(), UserInfoRequest.of(accessTokenResponse));
     }
 
-    public UserInfo loginWithLoginToken(LoginToken loginToken) {
+    public ClientUserInfo loginWithLoginToken(LoginToken loginToken) {
         OAuthContext oAuthContext = this.oAuthContextProvider.getOAuthContext(loginToken.toState());
         if( oAuthContext == null ) {
             throw new IllegalStateException("oauth context not found");
@@ -150,16 +144,16 @@ public class OAuthService
         }
     }
 
-    public UserInfo authenticate(String provider, OAuthContext oAuthContext, UserInfoRequest request) {
+    public ClientUserInfo authenticate(String provider, OAuthContext oAuthContext, UserInfoRequest request) {
         OAuthClient oAuthClient = getOAuthClient(provider);
         if( request.getUserInfo() != null ) {
-            return request.getUserInfo();
+            return toClientUserInfo(provider, request.getUserInfo());
         }
         if( request.getIdToken() != null ) {
-            oAuthClient.getUserInfo(oAuthContext, request.getIdToken());
+            return toClientUserInfo(provider, oAuthClient.getUserInfo(oAuthContext, request.getIdToken()));
         }
         if( request.getAccessToken() != null ) {
-            return oAuthClient.getUserInfo(request.getAccessToken());
+            return toClientUserInfo(provider, oAuthClient.getUserInfo(request.getAccessToken()));
         }
         if( request.getAuthorizationGrant() != null ) {
             return authenticate(provider, request.getAuthorizationGrant());
@@ -175,12 +169,58 @@ public class OAuthService
         return cache;
     }
 
+
+    protected OAuthContext getOAuthContext(AuthenticationResponse response) {
+        State state = response.getState();
+        if( state == null ) {
+            return null;
+        }
+        return oAuthContextProvider.getOAuthContext(state);
+    }
+
     protected OAuthClient getOAuthClient(String provider) {
         OAuthClient oAuthClient = this.oAuthClientFactory.getOAuthClient(provider);
         if( oAuthClient == null ) {
             throw new IllegalStateException("oauth client not found for " + provider);
         }
         return oAuthClient;
+    }
+
+    protected ClientUserInfo toClientUserInfo(String provider, UserInfo userInfo) {
+        if( userInfo instanceof ClientUserInfo ) {
+            return (ClientUserInfo) userInfo;
+        }
+        return new ClientUserInfo(provider, userInfo);
+    }
+
+    private URI redirect(InnerAuthorizationRequest request,
+                         ErrorObject errorObject) {
+        HashMap<String, String> params = new HashMap<>();
+        if( StringUtils.isBlank(request.getState()) ) {
+            params.put("state", request.getState());
+        }
+        if( StringUtils.isBlank(request.getProvider()) ) {
+            params.put("provider", request.getProvider());
+        }
+
+        if( errorObject != null ) {
+            params.put("error", errorObject.getCode());
+            params.put("error_description", errorObject.getDescription());
+        }
+        try {
+            return new URI(UrlUtils.appendQuery(request.getRedirectUrl(), params));
+        } catch( URISyntaxException e ) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public boolean isAllowUnknownStateAuthorization() {
+        return allowUnknownStateAuthorization;
+    }
+
+    public void setAllowUnknownStateAuthorization(boolean allowUnknownStateAuthorization) {
+        this.allowUnknownStateAuthorization = allowUnknownStateAuthorization;
     }
 
     private static class InnerAuthorizationRequest implements Serializable
@@ -240,7 +280,7 @@ public class OAuthService
 
 
         @Override
-        public UserInfo getUserInfo() {
+        public ClientUserInfo getUserInfo() {
             return null;
         }
 

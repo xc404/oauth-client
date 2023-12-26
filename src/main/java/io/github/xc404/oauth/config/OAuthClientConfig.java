@@ -76,8 +76,8 @@ public class OAuthClientConfig
      */
     private long timeout = OAUTH_TIMEOUT;
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(String provider) {
+        return new Builder(provider);
     }
 
     public String getProvider() {
@@ -173,17 +173,10 @@ public class OAuthClientConfig
         private CodeChallengeMethod codeChallengeMethod;
         private Long timeout;
 
-        private Builder() {
-        }
-
-        public static Builder anOAuth2ClientConfig() {
-            return new Builder();
-        }
-
-        public Builder withProvider(String provider) {
+        private Builder(String provider) {
             this.provider = provider;
-            return this;
         }
+
 
         public Builder withClientId(String clientId) {
             this.clientId = clientId;
@@ -232,7 +225,7 @@ public class OAuthClientConfig
 
         public OAuthClientConfig build() {
             OAuthClientConfig oAuth2ClientConfig = new OAuthClientConfig();
-            oAuth2ClientConfig.setProvider(provider);
+            oAuth2ClientConfig.setProvider(provider.toLowerCase());
             oAuth2ClientConfig.setClientId(clientId);
             oAuth2ClientConfig.setClientSecret(clientSecret);
             oAuth2ClientConfig.setRedirectUri(redirectUri);
