@@ -1,6 +1,8 @@
 package io.github.xc404.oauth.provider;
 
 import io.github.xc404.oauth.config.OAuthProviderConfig;
+import io.github.xc404.oauth.oidc.UserInfoConvertor;
+import io.github.xc404.oauth.provider.github.GithubUserInfo;
 
 /**
  * @Author chaox
@@ -49,6 +51,11 @@ public enum CommonOAuthProvider implements OAuthProviderConfig
         @Override
         public String getUserInfoUri() {
             return "https://api.github.com/user";
+        }
+
+        @Override
+        public UserInfoConvertor userInfoConvertor() {
+            return GithubUserInfo.GithubUserInfoConvertor;
         }
     };
 

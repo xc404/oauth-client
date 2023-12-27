@@ -27,6 +27,10 @@ public class OAuthException extends RuntimeException
         this.errorObject = errorObject;
     }
 
+    public OAuthException(String message) {
+        this(new ErrorObject(SERVER_ERROR_CODE, message));
+    }
+
     public ErrorObject getErrorObject() {
         return errorObject;
     }

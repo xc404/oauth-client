@@ -1,4 +1,4 @@
-package io.github.xc404.oauth.oauth2.protocol;
+package io.github.xc404.oauth.oauth2;
 
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import io.github.xc404.oauth.utils.ParameterMapUtils;

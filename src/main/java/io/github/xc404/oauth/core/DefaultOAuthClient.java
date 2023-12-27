@@ -12,6 +12,7 @@ import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
+import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
@@ -19,6 +20,7 @@ import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -31,15 +33,17 @@ import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
-import com.nimbusds.openid.connect.sdk.UserInfoResponse;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import io.github.xc404.oauth.OAuthException;
 import io.github.xc404.oauth.config.OAuthConfig;
 import io.github.xc404.oauth.context.OAuthContext;
-import io.github.xc404.oauth.oauth2.protocol.AdditionalParamsAuthorizationGrant;
-import io.github.xc404.oauth.oidc.protocol.IdToken;
-import io.github.xc404.oauth.oidc.protocol.UserInfoTokenResponse;
+import io.github.xc404.oauth.oauth2.AdditionalParamsAuthorizationGrant;
+import io.github.xc404.oauth.oidc.IdToken;
+import io.github.xc404.oauth.oidc.OidcUserInfo;
+import io.github.xc404.oauth.oidc.OidcUserInfoClaim;
+import io.github.xc404.oauth.oidc.StandardUserInfoConvertor;
+import io.github.xc404.oauth.oidc.UserInfoConvertor;
+import io.github.xc404.oauth.oidc.UserInfoTokenResponse;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -50,7 +54,6 @@ import java.util.Optional;
 
 import static com.nimbusds.jose.jwk.source.JWKSourceBuilder.DEFAULT_CACHE_REFRESH_TIMEOUT;
 import static com.nimbusds.jose.jwk.source.JWKSourceBuilder.DEFAULT_REFRESH_AHEAD_TIME;
-import static io.github.xc404.oauth.utils.UrlUtils.toURI;
 
 
 /**
@@ -59,6 +62,7 @@ import static io.github.xc404.oauth.utils.UrlUtils.toURI;
  */
 public class DefaultOAuthClient implements OAuthClient
 {
+    public static final String APPLICATION_JSON_ACCEPT = "application/json";
     protected OAuthConfig authConfig;
     protected ClientID clientID;
     protected Secret clientSecret;
@@ -74,19 +78,21 @@ public class DefaultOAuthClient implements OAuthClient
     protected IDTokenValidator idTokenValidator;
     protected boolean requiredOIDC;
 
+    protected UserInfoConvertor userInfoConvertor = new StandardUserInfoConvertor();
+
 
     public DefaultOAuthClient(OAuthConfig authConfig) {
         this.authConfig = authConfig;
         this.clientID = new ClientID(authConfig.getClientId());
         this.clientSecret = new Secret(authConfig.getClientSecret());
-        this.redirectUri = toURI(authConfig.getRedirectUri());
-        this.authorizationURI = toURI(authConfig.getAuthorizationUri());
-        this.tokenURI = toURI(authConfig.getTokenUri());
-        this.userInfoURI = toURI(authConfig.getUserInfoUri());
+        this.redirectUri = URI.create(authConfig.getRedirectUri());
+        this.authorizationURI = URI.create(authConfig.getAuthorizationUri());
+        this.tokenURI = URI.create(authConfig.getTokenUri());
+        this.userInfoURI = URI.create(authConfig.getUserInfoUri());
         this.scope = Scope.parse(authConfig.getScopes());
         this.requiredOIDC = scope != null && scope.contains(OIDCScopeValue.OPENID);
-        this.issuerURI = StringUtils.isNotBlank(authConfig.getIssuerUri()) ? toURI(authConfig.getIssuerUri()) : null;
-        this.jwkSetURI = StringUtils.isNotBlank(authConfig.getJwkSetUri()) ? toURI(authConfig.getJwkSetUri()) : null;
+        this.issuerURI = StringUtils.isNotBlank(authConfig.getIssuerUri()) ? URI.create(authConfig.getIssuerUri()) : null;
+        this.jwkSetURI = StringUtils.isNotBlank(authConfig.getJwkSetUri()) ? URI.create(authConfig.getJwkSetUri()) : null;
         this.supportOIDC = (this.issuerURI != null && this.jwkSetURI != null);
         if( supportOIDC ) {
             this.issuer = new Issuer(issuerURI);
@@ -157,7 +163,7 @@ public class DefaultOAuthClient implements OAuthClient
      */
     @Override
     public AccessTokenResponse authenticate(OAuthContext oAuthContext, AuthorizationGrant authorizationGrant) {
-        oAuthContext.setStep(OAuthContext.OAuthStep.AUTHORIZATION);
+        oAuthContext.setStep(OAuthContext.OAuthStep.AUTHENTICATE);
         // The token endpoint
         URI tokenEndpoint = this.tokenURI;
         Map<String, List<String>> parameters = null;
@@ -167,27 +173,33 @@ public class DefaultOAuthClient implements OAuthClient
         }
         if( authorizationGrant instanceof AuthorizationCodeGrant ) {
             URI redirectionURI = Optional.ofNullable(
-                    ((AuthorizationCodeGrant) authorizationGrant).getRedirectionURI()).orElse(this.authorizationURI);
+                    ((AuthorizationCodeGrant) authorizationGrant).getRedirectionURI()).orElse(this.redirectUri);
             CodeVerifier codeVerifier = Optional.ofNullable
                             (((AuthorizationCodeGrant) authorizationGrant).getCodeVerifier())
                     .orElse(oAuthContext.getCodeVerifier());
             authorizationGrant = new AuthorizationCodeGrant(((AuthorizationCodeGrant) authorizationGrant).getAuthorizationCode(), redirectionURI, codeVerifier);
         }
         // Make the token request
-        TokenRequest request;
-        if( authorizationGrant.getType().requiresClientAuthentication() ) {
-            ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
-            request = new TokenRequest(tokenEndpoint, clientAuth, authorizationGrant, scope, null, parameters);
-        } else {
-            request = new TokenRequest(tokenEndpoint, clientID, authorizationGrant, scope, null, null, parameters);
-        }
+        ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
+        TokenRequest request = new TokenRequest(tokenEndpoint, clientAuth, authorizationGrant, scope, null, parameters);
 
+
+        HTTPResponse httpResponse;
+        try {
+            HTTPRequest httpRequest = request.toHTTPRequest();
+            httpRequest.setAccept(APPLICATION_JSON_ACCEPT);
+            httpResponse = httpRequest.send();
+            if( !httpResponse.indicatesSuccess() ) {
+                throw new OAuthException(ErrorObject.parse(httpResponse));
+            }
+        } catch( IOException e ) {
+            throw new OAuthException(e);
+        }
         OIDCTokenResponse response;
         try {
-            HTTPResponse send = request.toHTTPRequest().send();
-            response = OIDCTokenResponse.parse(send);
-        } catch( ParseException | IOException e ) {
-            throw new RuntimeException(e);
+            response = OIDCTokenResponse.parse(httpResponse);
+        } catch( ParseException e ) {
+            throw new OAuthException(ErrorObject.parse(httpResponse));
         }
 
         if( !response.indicatesSuccess() ) {
@@ -208,28 +220,29 @@ public class DefaultOAuthClient implements OAuthClient
 
 
     @Override
-    public ClientUserInfo getUserInfo(AccessToken accessToken) {
+    public OidcUserInfo getUserInfo(AccessToken accessToken) {
         try {
-            HTTPResponse httpResponse = new UserInfoRequest(this.userInfoURI, accessToken)
-                    .toHTTPRequest()
-                    .send();
-
-            // Parse the response
-            UserInfoResponse userInfoResponse = UserInfoResponse.parse(httpResponse);
-
-            if( !userInfoResponse.indicatesSuccess() ) {
-                // The request failed, e.g. due to invalid or expired token
-                throw new OAuthException(userInfoResponse.toErrorResponse().getErrorObject());
+            HTTPRequest httpRequest = new UserInfoRequest(this.userInfoURI,
+                    this.authConfig.getUserInfoHttpMethod(),
+                    accessToken)
+                    .toHTTPRequest();
+            httpRequest.setAccept(APPLICATION_JSON_ACCEPT);
+            HTTPResponse httpResponse = httpRequest.send();
+            if( !httpResponse.indicatesSuccess() ) {
+                throw new OAuthException(ErrorObject.parse(httpResponse));
             }
 
-            // Extract the claims
-            UserInfo userInfo = userInfoResponse.toSuccessResponse().getUserInfo();
+            OidcUserInfo userInfo = convertToUserInfo(httpResponse);
+            if( userInfo == null ) {
+                throw new OAuthException(ErrorObject.parse(httpResponse));
+            }
             return new ClientUserInfo(this.authConfig.getProvider(), userInfo);
 
-        } catch( IOException | ParseException e ) {
+        } catch( IOException e ) {
             throw new OAuthException(e);
         }
     }
+
 
     protected void validateIdToken(OAuthContext oAuthContext, IdToken idToken) {
         try {
@@ -240,10 +253,10 @@ public class DefaultOAuthClient implements OAuthClient
         }
     }
 
-    public ClientUserInfo getUserInfo(OAuthContext oAuthContext, IdToken idToken) {
+    public OidcUserInfo getUserInfo(OAuthContext oAuthContext, IdToken idToken) {
 
         validateIdToken(oAuthContext, idToken);
-        return new ClientUserInfo(getOAuthConfig().getProvider(), new UserInfo(idToken.getJWTClaimsSet()));
+        return new ClientUserInfo(getOAuthConfig().getProvider(), new OidcUserInfoClaim(idToken.getJWTClaimsSet().getClaims()));
     }
 
     @Override
@@ -252,4 +265,25 @@ public class DefaultOAuthClient implements OAuthClient
     }
 
 
+    protected OidcUserInfo convertToUserInfo(HTTPResponse httpResponse) {
+        UserInfoConvertor convertor = this.getUserInfoConvertor();
+        OidcUserInfo userInfo = convertor.toUserInfo(httpResponse);
+        if( userInfo == null ) {
+            try {
+                return convertor.toUserUserInfo(httpResponse.getBodyAsJSONObject());
+            } catch( ParseException e ) {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
+    }
+
+
+    public UserInfoConvertor getUserInfoConvertor() {
+        return userInfoConvertor;
+    }
+
+    public void setUserInfoConvertor(UserInfoConvertor userInfoConvertor) {
+        this.userInfoConvertor = userInfoConvertor;
+    }
 }

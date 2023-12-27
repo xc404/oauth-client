@@ -17,7 +17,10 @@ package io.github.xc404.oauth.config;
 
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ResponseType;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import io.github.xc404.oauth.core.OAuthClient;
+import io.github.xc404.oauth.oidc.UserInfoConvertor;
 import io.github.xc404.oauth.provider.CommonOAuthProvider;
 
 import java.util.Set;
@@ -110,5 +113,18 @@ public class OAuthConfig
 
     public long getJwkSetRefreshInterval() {
         return providerConfig.getJwkSetRefreshInterval();
+    }
+
+
+    public HTTPRequest.Method getUserInfoHttpMethod() {
+        return providerConfig.getUserInfoHttpMethod();
+    }
+
+    public OAuthClient oauthClient(OAuthConfig oAuthConfig) {
+        return providerConfig.oauthClient(oAuthConfig);
+    }
+
+    public UserInfoConvertor userInfoConvertor() {
+        return providerConfig.userInfoConvertor();
     }
 }

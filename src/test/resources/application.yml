@@ -1,0 +1,13 @@
+server:
+  port: 8080
+xc404:
+  oauth:
+    allowUnknownStateAuthorization: true
+    server:
+      enabled: true
+      loginAfterAuthorization: true
+    clients:
+      github:
+        client_id: ef64d3a021d3409d999a
+        client_secret: d592c22e8824b5c1d422af031156b4e0898e6e7d
+        redirect_uri: http://localhost:8080/oauth/github/complete

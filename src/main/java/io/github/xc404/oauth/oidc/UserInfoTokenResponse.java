@@ -1,7 +1,6 @@
-package io.github.xc404.oauth.oidc.protocol;
+package io.github.xc404.oauth.oidc;
 
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
 /**
  * @Author chaox
@@ -9,18 +8,18 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
  */
 public class UserInfoTokenResponse extends OIDCTokenResponse
 {
-    private final UserInfo userInfo;
+    private final OidcUserInfo userInfo;
 
     private UserInfoTokenResponse(OIDCTokenResponse oidcTokenResponse) {
         super(oidcTokenResponse.getOIDCTokens(), oidcTokenResponse.getCustomParameters());
-        this.userInfo = new UserInfo(oidcTokenResponse.getOIDCTokens().toJSONObject());
+        this.userInfo = new OidcUserInfoClaim(oidcTokenResponse.getOIDCTokens().toJSONObject());
     }
 
     public static UserInfoTokenResponse from(OIDCTokenResponse oidcTokenResponse) {
         return new UserInfoTokenResponse(oidcTokenResponse);
     }
 
-    public UserInfo getUserInfo() {
+    public OidcUserInfo getUserInfo() {
         return userInfo;
     }
 }

@@ -20,14 +20,17 @@ public class AuthCtl
     private final OAuthService oAuthService;
     private final UserService userService;
     private final LoginService loginService;
-    private final boolean loginWhenAuthorization;
+    private boolean loginAfterAuthorization;
 
+    public AuthCtl(OAuthService oAuthService, UserService userService, LoginService loginService) {
+        this(oAuthService, userService, loginService, false);
+    }
 
-    public AuthCtl(OAuthService oAuthService, UserService userService, LoginService loginService, boolean loginWhenAuthorization) {
+    public AuthCtl(OAuthService oAuthService, UserService userService, LoginService loginService, boolean loginAfterAuthorization) {
         this.oAuthService = oAuthService;
         this.userService = userService;
         this.loginService = loginService;
-        this.loginWhenAuthorization = loginWhenAuthorization;
+        this.loginAfterAuthorization = loginAfterAuthorization;
     }
 
     public URI requestAuthorization(String provider, String redirectUrl, String state) {
@@ -35,19 +38,23 @@ public class AuthCtl
     }
 
     public URI authorizationCallback(URI requestUrl) {
+        return this.authorizationCallback(null, requestUrl);
+    }
 
-        AuthorizationResult authorizationResult = oAuthService.authorizationCallback(requestUrl);
+    public URI authorizationCallback(String provider, URI requestUrl) {
+
+        AuthorizationResult authorizationResult = oAuthService.authorizationCallback(provider, requestUrl);
         URI uri = authorizationResult.getRedirectURI();
         LoginToken loginToken = authorizationResult.getLoginToken();
         if( loginToken != null ) {
-            if( this.loginWhenAuthorization ) {
+            if( this.loginAfterAuthorization ) {
                 ClientUserInfo userInfo = this.oAuthService.loginWithLoginToken(loginToken);
                 SessionToken sessionToken = login(userInfo);
                 Map<String, String> params = Collections.singletonMap("session_token", sessionToken.getValue());
-                uri = UrlUtils.toURI(UrlUtils.appendQuery(uri.toString(), params));
+                uri = URI.create(UrlUtils.appendQuery(uri.toString(), params));
             } else {
                 Map<String, String> params = Collections.singletonMap("login_token", loginToken.getValue());
-                uri = UrlUtils.toURI(UrlUtils.appendQuery(uri.toString(), params));
+                uri = URI.create(UrlUtils.appendQuery(uri.toString(), params));
             }
         }
         return uri;
@@ -64,4 +71,11 @@ public class AuthCtl
         return this.loginService.login(user);
     }
 
+    public boolean isLoginAfterAuthorization() {
+        return loginAfterAuthorization;
+    }
+
+    public void setLoginAfterAuthorization(boolean loginAfterAuthorization) {
+        this.loginAfterAuthorization = loginAfterAuthorization;
+    }
 }

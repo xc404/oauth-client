@@ -8,10 +8,11 @@ import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import io.github.xc404.oauth.oauth2.protocol.AdditionalParamsAuthorizationGrant;
-import io.github.xc404.oauth.oidc.protocol.IdToken;
-import io.github.xc404.oauth.oidc.protocol.UserInfoTokenResponse;
+import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
+import io.github.xc404.oauth.oauth2.AdditionalParamsAuthorizationGrant;
+import io.github.xc404.oauth.oidc.IdToken;
+import io.github.xc404.oauth.oidc.OidcUserInfo;
+import io.github.xc404.oauth.oidc.UserInfoTokenResponse;
 
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public interface UserInfoRequest
         return new AuthorizationResponse(authorizationResponse, parameters);
     }
 
-    UserInfo getUserInfo();
+    OidcUserInfo getUserInfo();
 
     IdToken getIdToken();
 
@@ -50,7 +51,7 @@ public interface UserInfoRequest
         }
 
         @Override
-        public UserInfo getUserInfo() {
+        public OidcUserInfo getUserInfo() {
             if( accessTokenResponse instanceof UserInfoTokenResponse ) {
                 return ((UserInfoTokenResponse) accessTokenResponse).getUserInfo();
             }
@@ -60,7 +61,10 @@ public interface UserInfoRequest
         @Override
         public IdToken getIdToken() {
             if( accessTokenResponse instanceof OIDCTokenResponse ) {
-                return new IdToken(((OIDCTokenResponse) accessTokenResponse).getOIDCTokens().getIDToken());
+                OIDCTokens oidcTokens = ((OIDCTokenResponse) accessTokenResponse).getOIDCTokens();
+                if( oidcTokens != null && oidcTokens.getIDToken() != null ) {
+                    new IdToken(oidcTokens.getIDToken());
+                }
             }
             return null;
         }
@@ -89,7 +93,7 @@ public interface UserInfoRequest
         }
 
         @Override
-        public UserInfo getUserInfo() {
+        public OidcUserInfo getUserInfo() {
             return null;
         }
 

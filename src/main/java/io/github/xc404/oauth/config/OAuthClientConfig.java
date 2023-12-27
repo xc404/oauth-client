@@ -162,7 +162,7 @@ public class OAuthClientConfig
 
     public static final class Builder
     {
-        private String provider;
+        private final String provider;
         private String clientId;
         private String clientSecret;
         private String redirectUri;

@@ -1,4 +1,4 @@
-package io.github.xc404.oauth.oidc.protocol;
+package io.github.xc404.oauth.oidc;
 
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;

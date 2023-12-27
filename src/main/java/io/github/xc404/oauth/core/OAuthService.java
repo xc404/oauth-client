@@ -10,13 +10,14 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import com.nimbusds.openid.connect.sdk.AuthenticationResponse;
 import com.nimbusds.openid.connect.sdk.AuthenticationSuccessResponse;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import io.github.xc404.oauth.OAuthException;
 import io.github.xc404.oauth.context.DefaultOAuthContextProvider;
 import io.github.xc404.oauth.context.OAuthContext;
 import io.github.xc404.oauth.context.OAuthContextProvider;
-import io.github.xc404.oauth.oauth2.protocol.AdditionalParamsAuthorizationGrant;
-import io.github.xc404.oauth.oidc.protocol.IdToken;
+import io.github.xc404.oauth.oauth2.AdditionalParamsAuthorizationGrant;
+import io.github.xc404.oauth.oidc.IdToken;
+import io.github.xc404.oauth.oidc.OidcUserInfo;
+import io.github.xc404.oauth.oidc.OidcUserInfoClaim;
 import io.github.xc404.oauth.utils.OAuthParser;
 import io.github.xc404.oauth.utils.UrlUtils;
 
@@ -72,10 +73,10 @@ public class OAuthService
     }
 
     public AuthorizationResult authorizationCallback(URI requestUrl) {
-        return this.authorizationCallback(requestUrl, null);
+        return this.authorizationCallback(null, requestUrl);
     }
 
-    public AuthorizationResult authorizationCallback(URI requestUrl, String provider) {
+    public AuthorizationResult authorizationCallback(String provider, URI requestUrl) {
 
         OAuthParser.AuthorizationResponse parse = OAuthParser.parseAuthorizationResponse(requestUrl);
         AuthenticationResponse response = parse.getAuthenticationResponse();
@@ -186,7 +187,7 @@ public class OAuthService
         return oAuthClient;
     }
 
-    protected ClientUserInfo toClientUserInfo(String provider, UserInfo userInfo) {
+    protected ClientUserInfo toClientUserInfo(String provider, OidcUserInfo userInfo) {
         if( userInfo instanceof ClientUserInfo ) {
             return (ClientUserInfo) userInfo;
         }

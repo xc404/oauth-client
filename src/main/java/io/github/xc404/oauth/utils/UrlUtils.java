@@ -5,7 +5,6 @@ import com.nimbusds.oauth2.sdk.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -54,14 +53,6 @@ public class UrlUtils
             }
         }
         return url;
-    }
-
-    public static URI toURI(String url) {
-        try {
-            return new URI(url);
-        } catch( URISyntaxException e ) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
 

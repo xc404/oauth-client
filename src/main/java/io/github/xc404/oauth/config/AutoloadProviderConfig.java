@@ -1,9 +1,12 @@
 package io.github.xc404.oauth.config;
 
 import com.nimbusds.oauth2.sdk.GeneralException;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
+import io.github.xc404.oauth.core.OAuthClient;
+import io.github.xc404.oauth.oidc.UserInfoConvertor;
 
 import java.io.IOException;
 
@@ -79,4 +82,23 @@ public class AutoloadProviderConfig implements OAuthProviderConfig
         }
     }
 
+    @Override
+    public HTTPRequest.Method getUserInfoHttpMethod() {
+        return oAuthProviderConfig.getUserInfoHttpMethod();
+    }
+
+    @Override
+    public long getJwkSetRefreshInterval() {
+        return oAuthProviderConfig.getJwkSetRefreshInterval();
+    }
+
+    @Override
+    public OAuthClient oauthClient(OAuthConfig oAuthConfig) {
+        return oAuthProviderConfig.oauthClient(oAuthConfig);
+    }
+
+    @Override
+    public UserInfoConvertor userInfoConvertor() {
+        return oAuthProviderConfig.userInfoConvertor();
+    }
 }
