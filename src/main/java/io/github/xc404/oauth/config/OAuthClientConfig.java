@@ -40,10 +40,6 @@ public class OAuthClientConfig
      */
     private ResponseType responseType = ResponseType.CODE;
 
-    /**
-     * The optional value is: {@code authorization_code}, {@code password}, {@code client_credentials}
-     */
-    private GrantType grantType = GrantType.AUTHORIZATION_CODE;
 
     /**
      * The scope supported by the OAuth platform
@@ -120,13 +116,6 @@ public class OAuthClientConfig
         this.responseType = responseType;
     }
 
-    public GrantType getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(GrantType grantType) {
-        this.grantType = grantType;
-    }
 
     public Set<String> getScopes() {
         return scopes;
@@ -167,7 +156,6 @@ public class OAuthClientConfig
         private String clientSecret;
         private String redirectUri;
         private ResponseType responseType;
-        private GrantType grantType;
         private Set<String> scopes;
         private boolean enablePkce;
         private CodeChallengeMethod codeChallengeMethod;
@@ -198,10 +186,6 @@ public class OAuthClientConfig
             return this;
         }
 
-        public Builder withGrantType(GrantType grantType) {
-            this.grantType = grantType;
-            return this;
-        }
 
         public Builder withScopes(Set<String> scopes) {
             this.scopes = scopes;
@@ -230,7 +214,6 @@ public class OAuthClientConfig
             oAuth2ClientConfig.setClientSecret(clientSecret);
             oAuth2ClientConfig.setRedirectUri(redirectUri);
             oAuth2ClientConfig.setResponseType(responseType);
-            oAuth2ClientConfig.setGrantType(grantType);
             oAuth2ClientConfig.setScopes(scopes);
             oAuth2ClientConfig.setEnablePkce(enablePkce);
             oAuth2ClientConfig.setCodeChallengeMethod(codeChallengeMethod);

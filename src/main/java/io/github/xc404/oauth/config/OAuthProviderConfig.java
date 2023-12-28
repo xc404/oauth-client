@@ -21,7 +21,7 @@ public interface OAuthProviderConfig
     /**
      * URL used to obtain an access token
      */
-    default String getTokenUri() {
+    default String getAccessTokenUri() {
         return null;
     }
 

@@ -32,7 +32,7 @@ public class SimpleOAuthProviderConfig implements OAuthProviderConfig
     }
 
     @Override
-    public String getTokenUri() {
+    public String getAccessTokenUri() {
         return tokenUri;
     }
 

@@ -74,9 +74,6 @@ public class OAuthConfig
         return clientConfig.getResponseType();
     }
 
-    public GrantType getGrantType() {
-        return clientConfig.getGrantType();
-    }
 
     public long getTimeout() {
         return clientConfig.getTimeout();
@@ -95,8 +92,8 @@ public class OAuthConfig
         return providerConfig.getAuthorizationUri();
     }
 
-    public String getTokenUri() {
-        return providerConfig.getTokenUri();
+    public String getAccessTokenUri() {
+        return providerConfig.getAccessTokenUri();
     }
 
     public String getUserInfoUri() {

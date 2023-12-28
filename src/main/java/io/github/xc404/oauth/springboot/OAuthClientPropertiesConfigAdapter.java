@@ -66,11 +66,6 @@ public final class OAuthClientPropertiesConfigAdapter
         builder.withClientId(property.getClientId());
         builder.withClientSecret(property.getClientSecret());
         builder.withEnablePkce(property.isEnablePkce());
-        try {
-            builder.withGrantType(GrantType.parse(property.getGrantType()));
-        } catch( ParseException e ) {
-            throw new ConfigurationException(e, "grantType");
-        }
         builder.withTimeout(property.getTimeout());
         builder.withScopes(property.getScope());
         builder.withRedirectUri(property.getRedirectUri());

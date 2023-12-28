@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 9000
 xc404:
   oauth:
     allowUnknownStateAuthorization: true
@@ -11,3 +11,7 @@ xc404:
         client_id: ef64d3a021d3409d999a
         client_secret: d592c22e8824b5c1d422af031156b4e0898e6e7d
         redirect_uri: http://localhost:8080/oauth/github/complete
+      wechat:
+        client_id: wxc4d66216f95752ca
+        client_secret: 7d86e96eab41ca4a9d8d77ff2c75e83f
+        redirect_uri: http://localhost:9000/sys/authentication/external/redirect

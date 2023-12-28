@@ -16,6 +16,8 @@
 
 package io.github.xc404.oauth.oidc;
 
+import com.nimbusds.oauth2.sdk.util.StringUtils;
+
 /**
  * The Address Claim represents a physical mailing address defined by the OpenID Connect
  * Core 1.0 specification that can be returned either in the UserInfo Response or the ID
@@ -39,7 +41,9 @@ public interface AddressStandard
      *
      * @return the full mailing address
      */
-    String getFormatted();
+    default String getFormatted() {
+      return null;
+    }
 
     /**
      * Returns the full street address, which may include house number, street name, P.O.
@@ -47,34 +51,34 @@ public interface AddressStandard
      *
      * @return the full street address
      */
-    String getStreetAddress();
+    default String getStreetAddress() {return null;};
 
     /**
      * Returns the city or locality.
      *
      * @return the city or locality
      */
-    String getLocality();
+    default String getLocality() {return null;};
 
     /**
      * Returns the state, province, prefecture, or region.
      *
      * @return the state, province, prefecture, or region
      */
-    String getRegion();
+    default String getRegion(){return null;};
 
     /**
      * Returns the zip code or postal code.
      *
      * @return the zip code or postal code
      */
-    String getPostalCode();
+    default String getPostalCode(){return null;};
 
     /**
      * Returns the country.
      *
      * @return the country
      */
-    String getCountry();
+    default String getCountry(){return null;};
 
 }

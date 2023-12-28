@@ -35,8 +35,8 @@ public class AutoloadProviderConfig implements OAuthProviderConfig
     }
 
     @Override
-    public String getTokenUri() {
-        String uri = this.oAuthProviderConfig.getTokenUri();
+    public String getAccessTokenUri() {
+        String uri = this.oAuthProviderConfig.getAccessTokenUri();
         if( StringUtils.isBlank(uri) ) {
             ensureOIDCMetadataLoaded();
             uri = oidcMetadata.getTokenEndpointURI().toString();
