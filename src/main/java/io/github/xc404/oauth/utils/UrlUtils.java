@@ -45,7 +45,7 @@ public class UrlUtils
 
 
     public static String appendQueryString(String url, String queryString) {
-        if( queryString.length() > 0 ) {
+        if( !queryString.isEmpty() ) {
             if( url.contains("?") ) {
                 return url + "&" + queryString;
             } else {

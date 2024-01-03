@@ -5,6 +5,7 @@ import io.github.xc404.oauth.config.OAuthProviderConfig;
 import io.github.xc404.oauth.core.OAuthClient;
 import io.github.xc404.oauth.oidc.UserInfoConvertor;
 import io.github.xc404.oauth.provider.github.GithubUserInfo;
+import io.github.xc404.oauth.provider.qq.QQOAuthClient;
 import io.github.xc404.oauth.provider.wechat.WechatOAuthClient;
 
 /**
@@ -111,6 +112,23 @@ public enum CommonOAuthProvider implements OAuthProviderConfig
         @Override
         public OAuthClient oauthClient(OAuthConfig oAuthConfig) {
             return new WechatOAuthClient(oAuthConfig);
+        }
+    },
+    QQ {
+        public String getAuthorizationUri() {
+            return "https://graph.qq.com/oauth2.0/authorize";
+        }
+
+        public String getAccessTokenUri() {
+            return "https://graph.qq.com/oauth2.0/token";
+        }
+
+        public String getUserInfoUri() {
+            return "https://graph.qq.com/user/get_user_info";
+        }
+        @Override
+        public OAuthClient oauthClient(OAuthConfig oAuthConfig) {
+            return new QQOAuthClient(oAuthConfig);
         }
     }
     ;

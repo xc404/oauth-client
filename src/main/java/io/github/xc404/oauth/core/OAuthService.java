@@ -150,7 +150,7 @@ public class OAuthService
         if( request.getUserInfo() != null ) {
             return toClientUserInfo(provider, request.getUserInfo());
         }
-        if( request.getIdToken() != null ) {
+        if( request.getIdToken() != null && oAuthClient instanceof DefaultOAuthClient && ((DefaultOAuthClient) oAuthClient).isSupportOIDC()) {
             return toClientUserInfo(provider, oAuthClient.getUserInfo(oAuthContext, request.getIdToken()));
         }
         if( request.getAccessToken() != null ) {
@@ -197,10 +197,10 @@ public class OAuthService
     private URI redirect(InnerAuthorizationRequest request,
                          ErrorObject errorObject) {
         HashMap<String, String> params = new HashMap<>();
-        if( StringUtils.isBlank(request.getState()) ) {
+        if( StringUtils.isNotBlank(request.getState()) ) {
             params.put("state", request.getState());
         }
-        if( StringUtils.isBlank(request.getProvider()) ) {
+        if( StringUtils.isNotBlank(request.getProvider()) ) {
             params.put("provider", request.getProvider());
         }
 

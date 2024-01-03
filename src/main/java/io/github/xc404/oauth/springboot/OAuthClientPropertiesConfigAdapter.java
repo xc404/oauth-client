@@ -16,7 +16,6 @@
 
 package io.github.xc404.oauth.springboot;
 
-import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
@@ -56,7 +55,9 @@ public final class OAuthClientPropertiesConfigAdapter
                 .jwkSetUri(property.getJwkSetUri())
                 .authorizationUri(property.getAuthorizationUri())
                 .userInfoUri(property.getUserInfoUri())
-                .tokenUri(property.getTokenUri())
+                .accessTokenUri(property.getTokenUri())
+                .jwkSetRefreshInterval(property.getJwkSetRefreshInterval())
+                .userInfoHttpMethod(property.getUserInfoHttpMethod())
                 .build();
     }
 

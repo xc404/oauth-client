@@ -19,6 +19,7 @@ import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
 import io.github.xc404.oauth.core.OAuthClient;
 import io.github.xc404.oauth.oidc.UserInfoConvertor;
 import io.github.xc404.oauth.provider.CommonOAuthProvider;
@@ -46,7 +47,11 @@ public class OAuthConfig
 
     public OAuthConfig(OAuthClientConfig clientConfig, OAuthProviderConfig providerConfig) {
         this.clientConfig = clientConfig;
-        this.providerConfig = new AutoloadProviderConfig(providerConfig);
+
+        if( StringUtils.isNotBlank(providerConfig.getIssuerUri()) ) {
+            providerConfig = new AutoloadProviderConfig(providerConfig);
+        }
+        this.providerConfig = providerConfig;
     }
 
     public String getProvider() {

@@ -44,20 +44,20 @@ public class OAuthParser
     public static AuthorizationGrant parseAuthorizationGrant(String requestJson) {
         try {
             JSONObject jsonObject = JSONObjectUtils.parse(requestJson);
-            Map<String, List<String>> params = ParameterMapUtils.toParameterMap(jsonObject);
-            return parseAuthorizationGrant(params);
+            return parseAuthorizationGrant(jsonObject);
 
         } catch( ParseException e ) {
             throw new RuntimeException(e);
         }
     }
 
-    public static AuthorizationGrant parseAuthorizationGrant(Map<String, List<String>> params) {
+    public static AuthorizationGrant parseAuthorizationGrant(Map<String, Object> parameters) {
         try {
+            Map<String, List<String>> params = ParameterMapUtils.toParameterMap(parameters);
             String grantTypeString = MultivaluedMapUtils.getFirstValue(params, "grant_type");
             GrantType grantType = GrantType.parse(grantTypeString);
             if( LoginTokenGrant.GRANT_TYPE.equals(grantType) ) {
-                LoginTokenGrant.parse(params);
+                return LoginTokenGrant.parse(params);
             }
             return AuthorizationGrant.parse(params);
         } catch( ParseException e ) {

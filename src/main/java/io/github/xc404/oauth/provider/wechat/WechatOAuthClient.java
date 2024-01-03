@@ -5,6 +5,7 @@ import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
+import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import io.github.xc404.oauth.config.OAuthConfig;
@@ -35,12 +36,18 @@ public class WechatOAuthClient extends DefaultOAuthClient
 
     @Override
     public URI requestAuthorization(OAuthContext oAuthContext) {
+        oAuthContext.setStep(OAuthContext.OAuthStep.AUTHORIZATION);
+        State state = oAuthContext.getState();
+        if( state == null ) {
+            throw new IllegalStateException("State not exist in oauth context.");
+        }
+
         Map<String, String> params = new HashMap<>();
         params.put("appid", this.clientID.getValue());
         params.put("redirect_uri", this.redirectUri.toString());
         params.put("response_type", this.getOAuthConfig().getResponseType().toString());
         params.put("scope", getScopeParams());
-        params.put("state", oAuthContext.getState().getValue());
+        params.put("state", state.getValue());
         return URI.create(UrlUtils.appendQuery(this.authorizationURI.toString(), params));
     }
 

@@ -1,7 +1,6 @@
 package io.github.xc404.oauth.core;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.BadJOSEException;
@@ -55,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.nimbusds.jose.jwk.source.JWKSourceBuilder.DEFAULT_CACHE_REFRESH_TIMEOUT;
 import static com.nimbusds.jose.jwk.source.JWKSourceBuilder.DEFAULT_REFRESH_AHEAD_TIME;
@@ -67,6 +67,7 @@ import static com.nimbusds.jose.jwk.source.JWKSourceBuilder.DEFAULT_REFRESH_AHEA
 public class DefaultOAuthClient implements OAuthClient
 {
     public static final String APPLICATION_JSON_ACCEPT = "application/json";
+    private JWKSource<SecurityContext> jwkSource;
     protected OAuthConfig authConfig;
     protected ClientID clientID;
     protected Secret clientSecret;
@@ -79,7 +80,6 @@ public class DefaultOAuthClient implements OAuthClient
     protected URI accessTokenURI;
     protected URI userInfoURI;
     protected Issuer issuer;
-    protected IDTokenValidator idTokenValidator;
     protected boolean requiredOIDC;
 
     protected UserInfoConvertor userInfoConvertor = new StandardUserInfoConvertor();
@@ -101,10 +101,10 @@ public class DefaultOAuthClient implements OAuthClient
         if( supportOIDC ) {
             this.issuer = new Issuer(issuerURI);
             try {
-                JWKSource<SecurityContext> jwkSource = JWKSourceBuilder.create(jwkSetURI.toURL())
+                this.jwkSource = JWKSourceBuilder.create(jwkSetURI.toURL())
                         .cache(authConfig.getJwkSetRefreshInterval(), DEFAULT_CACHE_REFRESH_TIMEOUT)
                         .refreshAheadCache(DEFAULT_REFRESH_AHEAD_TIME, true).build();
-                this.idTokenValidator = new IDTokenValidator(issuer, clientID, new JWSVerificationKeySelector<>(JWSAlgorithm.HS256, jwkSource), null);
+
             } catch( MalformedURLException e ) {
                 throw new IllegalArgumentException(e);
             }
@@ -126,13 +126,16 @@ public class DefaultOAuthClient implements OAuthClient
         if( state == null ) {
             throw new IllegalStateException("State not exist in oauth context.");
         }
-        if( oAuthContext.getStep() != OAuthContext.OAuthStep.AUTHORIZATION ) {
-            throw new IllegalStateException("Illegal oauth state.");
-        }
 
         // Generate random state string for pairing the response to the request
-        CodeVerifier codeVerifier = authConfig.isEnablePkce() ? oAuthContext.getCodeVerifier() : null;
-        Nonce nonce = requiredOIDC ? oAuthContext.getNonce() : null;
+        CodeVerifier codeVerifier = authConfig.isEnablePkce() ? new CodeVerifier() : null;
+        Nonce nonce = requiredOIDC ? new Nonce() : null;
+        if( codeVerifier != null ) {
+            oAuthContext.setCodeVerifier(codeVerifier);
+        }
+        if( nonce != null ) {
+            oAuthContext.setNonce(nonce);
+        }
         AuthorizationRequest request;
 
         // Build the request
@@ -266,7 +269,7 @@ public class DefaultOAuthClient implements OAuthClient
                 .toHTTPRequest();
         //todo  replace oauth2-oidc-sdk ;
         //todo make it configurable
-        if(this.authConfig.getUserInfoHttpMethod() == HTTPRequest.Method.GET && accessToken.getType() == AccessTokenType.BEARER){
+        if( this.authConfig.getUserInfoHttpMethod() == HTTPRequest.Method.GET && accessToken.getType() == AccessTokenType.BEARER ) {
             httpRequest.appendQueryParameters(Collections.singletonMap("access_token", Collections.singletonList(accessToken.getValue())));
         }
         httpRequest.setAccept(APPLICATION_JSON_ACCEPT);
@@ -277,6 +280,7 @@ public class DefaultOAuthClient implements OAuthClient
     protected void validateIdToken(OAuthContext oAuthContext, IdToken idToken) {
         try {
             oAuthContext.setStep(OAuthContext.OAuthStep.AUTHENTICATE);
+            IDTokenValidator idTokenValidator = new IDTokenValidator(issuer, clientID, new JWSVerificationKeySelector(Set.of(idToken.getJwt().getHeader().getAlgorithm()), jwkSource), null);
             idTokenValidator.validate(idToken.getJwt(), oAuthContext.getNonce());
         } catch( BadJOSEException | JOSEException e ) {
             throw new OAuthException(e);
@@ -284,7 +288,9 @@ public class DefaultOAuthClient implements OAuthClient
     }
 
     public OidcUserInfo getUserInfo(OAuthContext oAuthContext, IdToken idToken) {
-
+        if(!supportOIDC){
+            return null;
+        }
         validateIdToken(oAuthContext, idToken);
         return new ClientUserInfo(getOAuthConfig().getProvider(), new OidcUserInfoClaim(idToken.getJWTClaimsSet().getClaims()));
     }
@@ -309,6 +315,9 @@ public class DefaultOAuthClient implements OAuthClient
         return null;
     }
 
+    public boolean isSupportOIDC() {
+        return supportOIDC;
+    }
 
     public UserInfoConvertor getUserInfoConvertor() {
         return userInfoConvertor;

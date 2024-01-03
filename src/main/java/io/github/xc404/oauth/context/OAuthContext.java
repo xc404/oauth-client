@@ -42,11 +42,16 @@ public interface OAuthContext
 
     State getState();
 
+
     CodeVerifier getCodeVerifier();
 
     Nonce getNonce();
 
     void clear();
+
+    void setCodeVerifier(CodeVerifier codeVerifier);
+
+    void setNonce(Nonce nonce);
 
     enum OAuthStep
     {

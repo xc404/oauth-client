@@ -29,7 +29,7 @@ public class OAuthTestController extends AuthCtl
 
     @GetMapping("sys/authentication/external/redirect")
     public RedirectView authorizationCallback() {
-        return new RedirectView(super.authorizationCallback("wechat",ServletUriComponentsBuilder.fromCurrentRequest().build().toUri()).toString());
+        return new RedirectView(super.authorizationCallback("qq",ServletUriComponentsBuilder.fromCurrentRequest().build().toUri()).toString());
 
     }
 }

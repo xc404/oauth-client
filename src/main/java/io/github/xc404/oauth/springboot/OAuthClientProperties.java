@@ -7,7 +7,10 @@ package io.github.xc404.oauth.springboot;
 
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ResponseType;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import io.github.xc404.oauth.config.OAuthConfig;
+import io.github.xc404.oauth.core.OAuthClient;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
@@ -15,6 +18,7 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 @ConfigurationProperties(
         prefix = "xc404.oauth"
@@ -111,6 +115,9 @@ public class OAuthClientProperties implements InitializingBean
         private String userInfoUri;
         private String jwkSetUri;
         private String issuerUri;
+
+        private HTTPRequest.Method userInfoHttpMethod;
+        private Long jwkSetRefreshInterval;
 
         public OAuthClientProperty() {
         }
@@ -227,6 +234,22 @@ public class OAuthClientProperties implements InitializingBean
 
         public void setIssuerUri(String issuerUri) {
             this.issuerUri = issuerUri;
+        }
+
+        public HTTPRequest.Method getUserInfoHttpMethod() {
+            return userInfoHttpMethod;
+        }
+
+        public void setUserInfoHttpMethod(HTTPRequest.Method userInfoHttpMethod) {
+            this.userInfoHttpMethod = userInfoHttpMethod;
+        }
+
+        public Long getJwkSetRefreshInterval() {
+            return jwkSetRefreshInterval;
+        }
+
+        public void setJwkSetRefreshInterval(Long jwkSetRefreshInterval) {
+            this.jwkSetRefreshInterval = jwkSetRefreshInterval;
         }
     }
 }

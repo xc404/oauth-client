@@ -1,4 +1,4 @@
-package io.github.xc404.oauth.provider.wechat;
+package io.github.xc404.oauth.provider.qq;
 
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import io.github.xc404.oauth.context.OAuthContext;
@@ -6,6 +6,7 @@ import io.github.xc404.oauth.core.OAuthClient;
 import io.github.xc404.oauth.core.OAuthClientFactory;
 import io.github.xc404.oauth.oidc.OidcUserInfo;
 import io.github.xc404.oauth.provider.CommonOAuthProvider;
+import io.github.xc404.oauth.provider.wechat.WechatAccessToken;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.junit.Assert;
@@ -23,18 +24,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @Author chaox
- * @Date 12/27/2023 4:14 PM
+ * @Date 12/30/2023 8:45 AM
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class WechatOAuthClientTest
+public class QQOAuthClientTest
 {
-
     @Autowired
     private OAuthClientFactory oAuthClientFactory;
     @org.junit.Test
     public void githubAuthorizationRequest(){
-        OAuthClient oAuthClient = oAuthClientFactory.getOAuthClient(CommonOAuthProvider.WECHAT.getProvider());
+        OAuthClient oAuthClient = oAuthClientFactory.getOAuthClient(CommonOAuthProvider.QQ.getProvider());
         String redirectUri = oAuthClient.getOAuthConfig().getRedirectUri();
         Assert.assertNotNull(oAuthClient);
         URI uri = oAuthClient.requestAuthorization(OAuthContext.create());
@@ -44,7 +44,7 @@ public class WechatOAuthClientTest
     @org.junit.Test
     public void githubAuthorizationComplete(){
 
-        String url = "http://localhost:9000/sys/authentication/external/redirect?code=091SVfGa1kZ4EG0refIa1Ho5k71SVfGQ&state=D6lpdEsayvdMw5-639uWGe5QS1vuo7YMm13kF7V9GD8";
+        String url = "http://localhost:9000/sys/authentication/external/redirect?code=EA0F21ED1002AB3EFB94C2F8B35E917C&state=aGthEfXr3YP6bJ2nZhkGUODG_2n7qJPlsL1ajAfred4";
         ExtractableResponse<Response> response = given()
                 .redirects().follow(false)
                 .get(url)
@@ -58,10 +58,10 @@ public class WechatOAuthClientTest
 
     @Test
     public void getUserInfo(){
-        OAuthClient oAuthClient = oAuthClientFactory.getOAuthClient(CommonOAuthProvider.WECHAT.getProvider());
-        OidcUserInfo userInfo = oAuthClient.getUserInfo(new WechatAccessToken("o45IpwiB_uIRlYHzdhxe1on6T2Fg", new BearerAccessToken("75_ZU899cws1mnWUq5jy6Kzk2lxk4L7qwbGfcL_dKdl3A4yh8BOlBCCU_a0hgDwXiuoWlvYDzxdPzPacjBzPWVrTVyZ-j19L631crFBpmDyYRs")));
+        OAuthClient oAuthClient = oAuthClientFactory.getOAuthClient(CommonOAuthProvider.QQ.getProvider());
+        OidcUserInfo userInfo = oAuthClient.getUserInfo(new QQAccessToken("81B89A92647C4E324BC76FE9BA3BBC62", new BearerAccessToken("24B0A53B5791AC741EB632D183398409")));
         System.out.println(userInfo.getSubject());
-        System.out.println(userInfo.getFullName());
+        System.out.println(userInfo.getNickName());
         RestClient.create();
     }
 }

@@ -1,5 +1,5 @@
 server:
-  port: 9000
+  port: 8080
 xc404:
   oauth:
     allowUnknownStateAuthorization: true
@@ -15,3 +15,12 @@ xc404:
         client_id: wxc4d66216f95752ca
         client_secret: 7d86e96eab41ca4a9d8d77ff2c75e83f
         redirect_uri: http://localhost:9000/sys/authentication/external/redirect
+      qq:
+        client_id: 101359010
+        client_secret: bd3afa118eca877bab1243f7448df6c4
+        redirect_uri: http://localhost:9000/sys/authentication/external/redirect
+      authing:
+        client_id: 657d5aeeecb3b9e4f0d5451c
+        client_secret: a7c7baacec95035c2afa89d80fe7e12b
+        redirect_uri: http://localhost:8080/oauth/authing/complete
+        issuer_uri: https://blcl8qm9zvre-demo.authing.cn/oidc

@@ -31,7 +31,7 @@ public abstract class AbstractOAuthContext implements OAuthContext
 
     @Override
     public void setStep(OAuthStep oAuthStep) {
-        if( oAuthStep == OAuthStep.AUTHENTICATE && this.oAuthStep == OAuthStep.AUTHENTICATE ) {
+        if( oAuthStep == OAuthStep.AUTHORIZATION && this.oAuthStep == OAuthStep.AUTHENTICATE ) {
             throw new IllegalStateException("state can not rollback");
         }
         this.oAuthStep = oAuthStep;
@@ -54,19 +54,21 @@ public abstract class AbstractOAuthContext implements OAuthContext
 
     @Override
     public CodeVerifier getCodeVerifier() {
-        if( this.codeVerifier == null && this.oAuthStep == OAuthStep.AUTHORIZATION ) {
-            this.codeVerifier = new CodeVerifier();
-        }
         return this.codeVerifier;
     }
 
     @Override
     public Nonce getNonce() {
-        if( this.nonce == null && this.oAuthStep == OAuthStep.AUTHORIZATION ) {
-            this.nonce = new Nonce();
-        }
         return this.nonce;
     }
 
+    @Override
+    public void setCodeVerifier(CodeVerifier codeVerifier) {
+        this.codeVerifier = codeVerifier;
+    }
 
+    @Override
+    public void setNonce(Nonce nonce) {
+        this.nonce = nonce;
+    }
 }

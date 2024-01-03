@@ -1,11 +1,11 @@
-package io.github.xc404.oauth.provider.wechat;
+package io.github.xc404.oauth.provider.qq;
 
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import io.github.xc404.oauth.oidc.AddressStandard;
 import io.github.xc404.oauth.oidc.ChinaAddressClaim;
 import io.github.xc404.oauth.oidc.OidcUserInfoClaim;
 import io.github.xc404.oauth.oidc.UserInfoConvertor;
-import io.github.xc404.oauth.provider.github.GithubUserInfo;
+import io.github.xc404.oauth.provider.wechat.WechatUserInfo;
 
 import java.util.Map;
 
@@ -14,30 +14,31 @@ import java.util.Map;
  * @Date 12/27/2023 2:12 PM
  * @see <a href="https://developers.weixin.qq.com/doc/offiaccount/User_Management/Get_users_basic_information_UnionID.html#UinonId">获取用户基本信息(UnionID机制)</a>
  */
-public class WechatUserInfo extends OidcUserInfoClaim
+public class QQUserInfo extends OidcUserInfoClaim
 {
+    public static final UserInfoConvertor QQUserInfoConvertor = QQUserInfo::new;
 
-    public static final String SUB = "openid";
-    public static final String UNIONID = "unionid";
+    private String openId;
     public static final String NAME = "nickname";
 
-    public static final String GENDER = "sex";
-
-    public static final String PICTURE = "headimgurl";
+    public static final String PICTURE = "figureurl";
 
 
-    public static final UserInfoConvertor WechatUserInfoConvertor = WechatUserInfo::new;
-    public WechatUserInfo(Map<String, Object> claims) {
+    public QQUserInfo(Map<String, Object> claims) {
         super(claims);
     }
 
     @Override
     public String getSubject() {
-        String uniqueId = getClaimAsString(UNIONID);
-        if( StringUtils.isNotBlank(uniqueId) ){
-            return uniqueId;
-        }
-        return getClaimAsString(SUB);
+      return this.openId;
+    }
+
+    public String getOpenId() {
+        return openId;
+    }
+
+    public void setOpenId(String openId) {
+        this.openId = openId;
     }
 
     @Override
@@ -45,14 +46,9 @@ public class WechatUserInfo extends OidcUserInfoClaim
         return this.getClaimAsString(NAME);
     }
 
-    @Override
-    public String getGender() {
-        return this.getClaimAsString(GENDER);
-    }
 
     @Override
     public String getPicture() {
         return this.getClaimAsString(PICTURE);
     }
-
 }
