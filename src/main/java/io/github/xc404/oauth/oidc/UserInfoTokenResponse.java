@@ -1,6 +1,9 @@
 package io.github.xc404.oauth.oidc;
 
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
+import io.github.xc404.oauth.OAuthException;
+
+import java.text.ParseException;
 
 /**
  * @Author chaox
@@ -12,7 +15,11 @@ public class UserInfoTokenResponse extends OIDCTokenResponse
 
     private UserInfoTokenResponse(OIDCTokenResponse oidcTokenResponse) {
         super(oidcTokenResponse.getOIDCTokens(), oidcTokenResponse.getCustomParameters());
-        this.userInfo = new OidcUserInfoClaim(oidcTokenResponse.getOIDCTokens().toJSONObject());
+        try {
+            this.userInfo = new OidcUserInfoClaim(oidcTokenResponse.getOIDCTokens().getIDToken().getJWTClaimsSet().getClaims());
+        } catch( ParseException e ) {
+            throw new OAuthException(e);
+        }
     }
 
     public static UserInfoTokenResponse from(OIDCTokenResponse oidcTokenResponse) {
